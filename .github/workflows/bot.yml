@@ -1,0 +1,33 @@
+name: Sebnem Ferah Bilet Botu
+
+on:
+  workflow_dispatch:
+
+jobs:
+  bilet-botu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Repo checkout
+        uses: actions/checkout@v4
+
+      - name: Chrome kur
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Python kur
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Bağımlılıkları yükle
+        run: pip install selenium webdriver-manager
+
+      - name: Botu çalıştır
+        env:
+          BILETIX_EMAIL: ${{ secrets.BILETIX_EMAIL }}
+          BILETIX_PASSWORD: ${{ secrets.BILETIX_PASSWORD }}
+          GMAIL_SENDER: ${{ secrets.GMAIL_SENDER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          NOTIFY_EMAIL: ${{ secrets.NOTIFY_EMAIL }}
+        run: python bot.py
