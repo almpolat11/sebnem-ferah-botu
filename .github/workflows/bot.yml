@@ -21,7 +21,7 @@ jobs:
           python-version: "3.11"
 
       - name: Bağımlılıkları yükle
-        run: pip install selenium webdriver-manager
+        run: pip install selenium
 
       - name: Botu çalıştır
         env:
