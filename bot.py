@@ -55,10 +55,24 @@ def get_driver():
     return driver
 
 
+def dismiss_cookie_banner(driver):
+    try:
+        wait = WebDriverWait(driver, 5)
+        accept_btn = wait.until(EC.element_to_be_clickable((By.ID, "onetrust-accept-btn-handler")))
+        accept_btn.click()
+        print("Cookie banner kapatıldı.")
+        time.sleep(1)
+    except Exception:
+        print("Cookie banner yok veya zaten kapalı.")
+
+
 def login(driver):
     print("Biletix'e giriş yapılıyor...")
     driver.get(LOGIN_URL)
     wait = WebDriverWait(driver, 20)
+
+    # Cookie banner'ı kapat
+    dismiss_cookie_banner(driver)
 
     # E-posta
     email_input = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "input[type='email'], input[formcontrolname='email']")))
@@ -70,11 +84,11 @@ def login(driver):
     pass_input.clear()
     pass_input.send_keys(BILETIX_PASSWORD)
 
-    # Giriş Yap butonu
+    # JavaScript ile tıkla (popup engellemesin)
     login_btn = driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
-    login_btn.click()
+    driver.execute_script("arguments[0].click();", login_btn)
 
-    time.sleep(3)
+    time.sleep(4)
     print(f"Giriş sonrası URL: {driver.current_url}")
 
 
@@ -91,12 +105,10 @@ def wait_for_queue(driver):
         current_url = driver.current_url
         print(f"Mevcut URL: {current_url}")
 
-        # Biletix'e yönlendirme oldu mu?
         if "biletix.com" in current_url:
             print("Yönlendirme algılandı!")
             return True
 
-        # Hâlâ queue-it'teyiz, bekle
         time.sleep(3)
 
 
@@ -105,14 +117,11 @@ def click_queue_image(driver):
     wait = WebDriverWait(driver, 15)
 
     try:
-        # Reklam/sıra görseline tıkla
         img = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "img.img_ad")))
-        img.click()
+        driver.execute_script("arguments[0].click();", img)
         print("Görsele tıklandı.")
     except Exception:
-        # Görsel bulunamazsa sayfadaki ilk tıklanabilir elemana bak
-        print("img_ad bulunamadı, sayfa içeriği kontrol ediliyor...")
-        print(driver.page_source[:2000])
+        print("img_ad bulunamadı, devam ediliyor...")
 
     time.sleep(3)
     return driver.current_url
@@ -121,19 +130,13 @@ def click_queue_image(driver):
 def main():
     driver = get_driver()
     try:
-        # 1. Giriş yap
         login(driver)
-
-        # 2. Queue-it'te bekle
         wait_for_queue(driver)
-
-        # 3. Sıraya giriş görseline tıkla
         final_url = click_queue_image(driver)
 
-        # 4. Mail at
         send_email(
             "🚨 SIRAYA GİRDİN! Şebnem Ferah",
-            f"Sıraya başarıyla girdin!\n\nŞu anki URL (sepete eklemek için kullan):\n{final_url}\n\nHemen tarayıcından bu linke git ve sepete ekle!"
+            f"Sıraya başarıyla girdin!\n\nŞu anki URL:\n{final_url}\n\nHemen tarayıcından bu linke git ve sepete ekle!"
         )
 
         print("İşlem tamamlandı. 5 dakika bekleniyor...")
